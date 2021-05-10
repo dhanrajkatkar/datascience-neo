@@ -19,8 +19,6 @@ def copy_data(q):
     while not q.empty():
         image_path, dest_path = q.get()
         # copy code
-        shutil.move(os.path.join(source_dir, file_name), os.path.join(target_dir, file_name))
-
         pbar.update(1)
     pbar.close()
 
