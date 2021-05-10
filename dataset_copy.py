@@ -1,10 +1,15 @@
 import pandas as pd
+import shutil
 from os import listdir, path
 from tqdm import tqdm
 from datetime import datetime
 from numpy import ndarray
 from threading import Thread
 from queue import Queue
+
+source_dir = ''
+target_dir = ''
+file_names = os.listdir(source_dir)
 
 # TODO dynamic Thread execution 
 no_of_threads = 4
@@ -19,8 +24,8 @@ def copy_data(q):
     while not q.empty():
         image_path, dest_path = q.get()
         # copy code
-        shutil.move(os.path.join(source_dir, file_name), os.path.join(target_dir, file_name))
-
+        for file_name in file_names:
+        shutil.copy(os.path.join(source_dir, file_name), os.path.join(target_dir, file_name))
         pbar.update(1)
     pbar.close()
 
