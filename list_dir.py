@@ -14,13 +14,13 @@ q2 = Queue()
 q3 = Queue()
 
 # TODO File copy code with all exceptions
-def copy_data(q):
-    pbar = tqdm(total=q.qsize(), position=0, leave=True)
-    while not q.empty():
-        image_path, dest_path = q.get()
+#def copy_data(q):
+#    pbar = tqdm(total=q.qsize(), position=0, leave=True)
+#    while not q.empty():
+#        image_path, dest_path = q.get()
         # copy code
-       pbar.update(1)
-    pbar.close()
+#       pbar.update(1)
+#    pbar.close()
 
 
 # TODO efficient read operation 
@@ -53,8 +53,9 @@ if __name__ == '__main__':
     print(datetime.now() - begin_time)  
 
 
-    Thread(target=copy_data, args=(q0,)).start()
-    Thread(target=copy_data, args=(q1,)).start()
-    Thread(target=copy_data, args=(q2,)).start()
-    Thread(target=copy_data, args=(q3,)).start()
+#    Thread(target=copy_data, args=(q0,)).start()
+#    Thread(target=copy_data, args=(q1,)).start()
+#    Thread(target=copy_data, args=(q2,)).start()
+#    Thread(target=copy_data, args=(q3,)).start()
     
+

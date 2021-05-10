@@ -1,5 +1,5 @@
 #import pandas as pd
-from os import listdir, path
+from os import listdir, path, scandir
 #from tqdm import tqdm
 from datetime import datetime
 #from numpy import ndarray
@@ -14,24 +14,24 @@ q2 = Queue()
 q3 = Queue()
 
 # TODO File copy code with all exceptions
-def copy_data(q):
-    pbar = tqdm(total=q.qsize(), position=0, leave=True)
-    while not q.empty():
-        image_path, dest_path = q.get()
+#def copy_data(q):
+#    pbar = tqdm(total=q.qsize(), position=0, leave=True)
+#   while not q.empty():
+#        image_path, dest_path = q.get()
         # copy code
-       pbar.update(1)
-    pbar.close()
+#       pbar.update(1)
+#    pbar.close()
 
 
 # TODO efficient read operation 
 def read_folders(data_dir, destiantion_dir):
-    folder_elements = listdir(data_dir)
+    folder_elements = scandir(data_dir)
     counter = 0
     # reading all sub-folders of the dataset & tqdm is used for creating a progress bar
     for element in folder_elements:
         element_path = path.join(data_dir, element)
         destination_path = path.join(destiantion_dir, element)
-        if path.isfile(element_path) and element_path[-4:] in ['.jpg', '.png', '.bmp']:
+        if element.is_file() and element_path[-4:] in ['.jpg', '.png', '.bmp']:
             if counter % 4 == 0:
                 q0.put(element_path, destination_path)
             elif counter % 4 == 1:
@@ -41,7 +41,7 @@ def read_folders(data_dir, destiantion_dir):
             elif counter % 4 == 3:
                 q3.put(element_path, destination_path,)
             counter += 1
-        elif path.isdir(element_path):
+        elif element.is_dir():
             read_folders(element_path,destination_path)
 
 
@@ -53,8 +53,9 @@ if __name__ == '__main__':
     print(datetime.now() - begin_time)  
 
 
-    Thread(target=copy_data, args=(q0,)).start()
-    Thread(target=copy_data, args=(q1,)).start()
-    Thread(target=copy_data, args=(q2,)).start()
-    Thread(target=copy_data, args=(q3,)).start()
+#    Thread(target=copy_data, args=(q0,)).start()
+#    Thread(target=copy_data, args=(q1,)).start()
+#    Thread(target=copy_data, args=(q2,)).start()
+#    Thread(target=copy_data, args=(q3,)).start()
     
+
