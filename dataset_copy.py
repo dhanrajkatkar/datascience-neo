@@ -66,8 +66,8 @@ def read_folders(data_dir, destination_dir):
 
 
 if __name__ == '__main__':
-    dataset_folder = "read_images"
-    destination_dir = "dest"
+    dataset_folder = "#"
+    destination_dir = "#"
     read_folders(dataset_folder, destination_dir)
 
     # Start n separate threads
