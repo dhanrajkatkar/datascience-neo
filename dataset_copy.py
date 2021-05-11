@@ -1,33 +1,14 @@
-import pandas as pd
 import shutil
-from os import listdir, path
-from tqdm import tqdm
-from datetime import datetime
-from numpy import ndarray
-from threading import Thread
+from os import path, scandir
 from queue import Queue
-import shutil
-import os
+from threading import Thread
 
+from tqdm import tqdm
 
 # Number of threads to execute
 NO_OF_THREADS = 4
 queue_objects = [Queue() for i in range(NO_OF_THREADS)]
 
-<<<<<<< HEAD
-source_dir = ''
-target_dir = ''
-
-file_names = os.listdir(source_dir)
-
-# TODO dynamic Thread execution 
-no_of_threads = 4
-q0 = Queue()
-q1 = Queue()
-q2 = Queue()
-q3 = Queue()
-=======
->>>>>>> 05d471803e56c905ad0c9dc61f854027e4c835e2
 
 # TODO File copy code with all exceptions
 def copy_data(q):
@@ -43,21 +24,12 @@ def copy_data(q):
     pbar = tqdm(total=q.qsize(), position=0, leave=True)
     while not q.empty():
         image_path, dest_path = q.get()
-        # copy code
-<<<<<<< HEAD
-        for file_name in file_names:
-        shutil.copy(os.path.join(source_dir, file_name), os.path.join(target_dir, file_name))
-=======
-        # split("/")[-1] split file name from path
-        shutil.copy(image_path,
-                    os.path.join(destination_dir, image_path.split("/")[-1]))
->>>>>>> 05d471803e56c905ad0c9dc61f854027e4c835e2
+        shutil.copy(image_path, dest_path)
         pbar.update(1)
     pbar.close()
 
-# TODO efficient read operation
 
-
+#  Read all folders recursively
 def read_folders(data_dir, destination_dir):
     '''
     Read folders recursively and put files into queues
@@ -69,27 +41,25 @@ def read_folders(data_dir, destination_dir):
     Returns:
             None
     '''
-    folder_elements = listdir(data_dir)
+    folder_elements = scandir(data_dir)
     counter = 0
     # reading all sub-folders of the dataset & tqdm is used for creating a progress bar
     for element in folder_elements:
         element_path = path.join(data_dir, element)
         destination_path = path.join(destination_dir, element)
-
+        print(element_path, destination_path)
         if path.isfile(element_path) and element_path[-4:] in ['.jpg', '.png', '.bmp']:
             queue_objects[counter % NO_OF_THREADS].put(
                 (element_path, destination_path))
 
             counter += 1
-        elif path.isdir(element_path):
+        elif element.is_dir():
             read_folders(element_path, destination_path)
 
-
 if __name__ == '__main__':
-    dataset_folder = "#"
-    destination_dir = "#"
+    dataset_folder = '/home/webwerks/Desktop/Neosoft_Training/PETA/Reviewed/3DPeS/normal_data'
+    destination_dir = "/home/webwerks/Desktop/Neosoft_Training/PETA/Reviewed/3DPeS/test"
     read_folders(dataset_folder, destination_dir)
-
     # Start n separate threads
     for obj in queue_objects:
         Thread(target=copy_data, args=(obj,)).start()
