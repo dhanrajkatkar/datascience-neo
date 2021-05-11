@@ -1,8 +1,5 @@
-import pandas as pd
 from os import listdir, path, scandir
 from tqdm import tqdm
-from datetime import datetime
-from numpy import ndarray
 from threading import Thread
 from queue import Queue
 import shutil
@@ -29,15 +26,13 @@ def copy_data(q):
     while not q.empty():
         image_path, dest_path = q.get()
         # copy code
-        # split("/")[-1] split file name from path
-        shutil.copy(image_path,
-                    os.path.join(destination_dir, image_path.split("/")[-1]))
+        shutil.copy(image_path,dest_path)
         pbar.update(1)
     pbar.close()
 
-# TODO efficient read operation
 
 
+#  Read all folders recursively
 def read_folders(data_dir, destination_dir):
     '''
     Read folders recursively and put files into queues
