@@ -96,9 +96,22 @@ def read_folders_walkdir(data_dir, destiantion_dir):
 if __name__ == '__main__':
     dataset_folder = "E:\\Imagesforscan"
     destination_folder = "E:\\folder1"
+    
+    print("Time for ListDir")
     begin_time = datetime.now()
     read_folders_listdir(dataset_folder,destination_folder)
-    print(datetime.now() - begin_time)  
+    print(datetime.now() - begin_time) 
+    print("\n")
+    print("Time for WalkDir")
+    begin_time = datetime.now()
+    read_folders_walkdir(dataset_folder,destination_folder)
+    print(datetime.now() - begin_time)
+    print("\n")
+    print("Time for ScanDir")
+    begin_time = datetime.now()
+    read_folders_scandir(dataset_folder,destination_folder)
+    print(datetime.now() - begin_time)
+     
 
 
 #    Thread(target=copy_data, args=(q0,)).start()
