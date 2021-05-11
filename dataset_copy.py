@@ -20,8 +20,8 @@ def copy_data(q):
         image_path, dest_path = q.get()
         # copy code
         shutil.move(os.path.join(source_dir, file_name), os.path.join(target_dir, file_name))
+
         pbar.update(1)
-       
     pbar.close()
 
 
@@ -44,19 +44,13 @@ def read_folders(data_dir, destiantion_dir):
                 q3.put(element_path, destination_path,)
             counter += 1
         elif path.isdir(element_path):
-            read_folders(element_path,destination_path)
+            read_folders(element_path)
 
 
 if __name__ == '__main__':
-    dataset_folder = "E:\\Imagesforscan"
-    destination_folder = "E:\\folder1"
-    begin_time = datetime.now()
-    read_folders(dataset_folder,destination_folder)
-    print(datetime.now() - begin_time)  
-
-
+    dataset_folder = ""
+    read_folders(dataset_folder)
     Thread(target=copy_data, args=(q0,)).start()
     Thread(target=copy_data, args=(q1,)).start()
     Thread(target=copy_data, args=(q2,)).start()
     Thread(target=copy_data, args=(q3,)).start()
-    
