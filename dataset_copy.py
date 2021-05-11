@@ -1,9 +1,9 @@
-#import pandas as pd
+import pandas as pd
 from os import listdir, path
-#from tqdm import tqdm
+from tqdm import tqdm
 from datetime import datetime
-#from numpy import ndarray
-#from threading import Thread
+from numpy import ndarray
+from threading import Thread
 from queue import Queue
 
 # TODO dynamic Thread execution 
@@ -19,7 +19,9 @@ def copy_data(q):
     while not q.empty():
         image_path, dest_path = q.get()
         # copy code
-       pbar.update(1)
+        shutil.move(os.path.join(source_dir, file_name), os.path.join(target_dir, file_name))
+        pbar.update(1)
+       
     pbar.close()
 
 
