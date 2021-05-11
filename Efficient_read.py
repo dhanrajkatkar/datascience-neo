@@ -1,5 +1,5 @@
 import pandas as pd
-from os import listdir, path, scandir
+from os import listdir, path, scandir, walk
 from tqdm import tqdm
 from datetime import datetime
 from numpy import ndarray
@@ -24,7 +24,7 @@ q3 = Queue()
 
 
 #  Read operation using listdir
-def read_folders_list_dir(data_dir, destiantion_dir):
+def read_folders_listdir(data_dir, destiantion_dir):
     folder_elements = listdir(data_dir)
     counter = 0
     # reading all sub-folders of the dataset & tqdm is used for creating a progress bar
@@ -97,7 +97,7 @@ if __name__ == '__main__':
     dataset_folder = "E:\\Imagesforscan"
     destination_folder = "E:\\folder1"
     begin_time = datetime.now()
-    read_folders_scandir(dataset_folder,destination_folder)
+    read_folders_listdir(dataset_folder,destination_folder)
     print(datetime.now() - begin_time)  
 
 
