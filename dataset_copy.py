@@ -27,7 +27,7 @@ def copy_data(q):
     '''
     pbar = tqdm(total=q.qsize(), position=0, leave=True)
     while not q.empty():
-        image_path = q.get()
+        image_path, dest_path = q.get()
         # copy code
         # split("/")[-1] split file name from path
         shutil.copy(image_path,
@@ -35,8 +35,9 @@ def copy_data(q):
         pbar.update(1)
     pbar.close()
 
-
 # TODO efficient read operation
+
+
 def read_folders(data_dir, destination_dir):
     '''
     Read folders recursively and put files into queues
@@ -55,8 +56,11 @@ def read_folders(data_dir, destination_dir):
         element_path = path.join(data_dir, element)
         destination_path = path.join(destination_dir, element)
 
-        if element.is_file() and element_path[-4:] in ['.jpg', '.png', '.bmp']:
-            queue_objects[counter % NO_OF_THREADS].put(element_path)
+
+        if path.isfile(element_path) and element_path[-4:] in ['.jpg', '.png', '.bmp']:
+            queue_objects[counter % NO_OF_THREADS].put(
+                (element_path, destination_path))
+
             counter += 1
         elif element.is_dir()::
             read_folders(element_path, destination_path)
