@@ -9,6 +9,7 @@ from queue import Queue
 
 source_dir = ''
 target_dir = ''
+
 file_names = os.listdir(source_dir)
 
 # TODO dynamic Thread execution 
