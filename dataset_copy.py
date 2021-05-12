@@ -2,9 +2,9 @@ import shutil
 from os import path, scandir, remove, cpu_count
 from queue import Queue
 from threading import Thread
+<<<<<<< HEAD
+import numpy as np
 import filecmp
-
-
 from tqdm import tqdm
 
 # Number of threads to execute
@@ -12,6 +12,8 @@ cpuCount = cpu_count()
 NO_OF_THREADS = cpuCount
 queue_objects = [Queue() for i in range(NO_OF_THREADS)]
 
+src_list=[]
+dst_list=[]
 
 # TODO File copy code with all exceptions
 def copy_data(q):
@@ -40,6 +42,7 @@ def copy_data(q):
 
 #  Read all folders recursively
 def read_folders(data_dir, destination_dir):
+
     '''
     Read folders recursively and put files into queues
     Args:
@@ -60,11 +63,22 @@ def read_folders(data_dir, destination_dir):
             queue_objects[counter % NO_OF_THREADS].put(
                 (element_path, destination_path))
             counter += 1
+            src_list.append(element.name)
 
         elif element.is_dir():
             read_folders(element_path, destination_path)
-
-
+                        
+#  reading the destination files
+def read_destination_files(destination_dir):
+    folder_elements = scandir(destination_dir)
+    for element in folder_elements:
+        dst_list.append(element.name)
+        
+#  checking if source file is deleted if any
+def source_check(dst_list,src_list):
+    diff_list = np.setdiff1d(dst_list,src_list)
+    return diff_list
+    
 #  Reading the full path and deleting the file present in the path
 def delete_from_destination(path_name):
     file_path = path.join(path_name)
@@ -73,15 +87,18 @@ def delete_from_destination(path_name):
 
 
 if __name__ == '__main__':
-    dataset_folder = r"#"
-    destination_dir = r"#"
-    dest_img_path = r"#"
 
+    dataset_folder = ""
+    destination_dir = ""
     read_folders(dataset_folder, destination_dir)
 
     # Start n separate threads
     for obj in queue_objects:
         Thread(target=copy_data, args=(obj,)).start()
+    read_destination_files(destination_dir)
+    source_check()
+
 
     # Calling delete function
     delete_from_destination(dest_img_path)
+
