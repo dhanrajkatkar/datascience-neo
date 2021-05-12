@@ -5,6 +5,7 @@ from threading import Thread
 import numpy as np
 
 
+
 from tqdm import tqdm
 
 # Number of threads to execute
@@ -49,10 +50,8 @@ def read_folders(data_dir, destination_dir):
                 (element_path, destination_path))
             counter += 1
             src_list.append(element.name)
-
         elif element.is_dir():
             read_folders(element_path, destination_path)
-            
             
 #  reading the destination files
 def read_destination_files(destination_dir):
@@ -65,8 +64,6 @@ def source_check():
     diff_list = np.setdiff1d(dst_list,src_list)
     print("The file named" ,diff_list, "is deleted from source")
     
-    
-
 
 #  Reading the full path and deleting the file present in the path
 def delete_from_destination(path_name):
@@ -76,8 +73,12 @@ def delete_from_destination(path_name):
 
 
 if __name__ == '__main__':
-    dataset_folder = ""
-    destination_dir = ""
+
+    dataset_folder = r"#"
+    destination_dir = r"#"
+    dest_img_path=r"#"
+
+
     read_folders(dataset_folder, destination_dir)
     
     # Start n separate threads
@@ -85,4 +86,8 @@ if __name__ == '__main__':
         Thread(target=copy_data, args=(obj,)).start()
     
     read_destination_files(destination_dir)
-    source_check()
+
+        
+    # Calling delete function    
+    delete_from_destination(dest_img_path)
+
