@@ -2,6 +2,7 @@ import shutil
 from os import path, scandir
 from queue import Queue
 from threading import Thread
+import os
 
 from tqdm import tqdm
 
@@ -44,52 +45,36 @@ def read_folders(data_dir, destination_dir):
     folder_elements = scandir(data_dir)
     counter = 0
     # reading all sub-folders of the dataset & tqdm is used for creating a progress bar
-    for element in folder_elements:       
-        element_path = path.join(data_dir, element)
+    for element in folder_elements:
+        element_path = path.join(data_dir, element.path)
 
-        destination_path = path.join(destination_dir, element)
+        destination_path = path.join(destination_dir)
 
-        if path.isfile(element_path) and element_path[-4:] in ['.jpg', '.png', '.bmp']:
+        if element.is_file() and element_path[-4:] in ['.jpg', '.png', '.bmp']:
             queue_objects[counter % NO_OF_THREADS].put(
+                (element_path, destination_path))
+            counter += 1
 
-                (element_path, destination_dir))
-            counter+=1
-            
         elif element.is_dir():
-            read_folders(element_path, destination_dir)
-            
-def delete_from_destination(file_name,destination_dir):
+            read_folders(element_path, destination_path)
+
+
+def delete_from_destination(file_name, destination_dir):
     path = os.path.join(destination_dir, file_name)
     os.remove(path)
-    
-
-                (element_path, destination_path))
-
-            counter += 1
-        elif element.is_dir()::
-            read_folders(element_path, destination_path)
-
-                (element_path, destination_path))
-
-            counter += 1
-        elif element.is_dir():
-            read_folders(element_path, destination_path)
+    print("file named", path, "is deleted")
 
 
 if __name__ == '__main__':
-    dataset_folder = "E:\\Imagesforscan"
-    destination_dir = "E:\\folder1"
-    file_name = "0002.jpg"
-
-    dataset_folder = '/home/webwerks/Desktop/Neosoft_Training/PETA/Reviewed/3DPeS/normal_data'
-    destination_dir = "/home/webwerks/Desktop/Neosoft_Training/PETA/Reviewed/3DPeS/test"
+    dataset_folder = r"E:\\Imagesforscan"
+    destination_dir = r"E:\\folder1"
+    #  dataset_folder = '/home/webwerks/Desktop/Neosoft_Training/PETA/Reviewed/3DPeS/normal_data'
+    #  destination_dir = "/home/webwerks/Desktop/Neosoft_Training/PETA/Reviewed/3DPeS/test"
+    file_name = "#"
 
     read_folders(dataset_folder, destination_dir)
-
-    delete_from_destination(file_name,destination_dir)
-
+    #  delete_from_destination(file_name, destination_dir)
 
     # Start n separate threads
     for obj in queue_objects:
         Thread(target=copy_data, args=(obj,)).start()
-
