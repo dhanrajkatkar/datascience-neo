@@ -25,10 +25,13 @@ def copy_data(q):
     pbar = tqdm(total=q.qsize(), position=0, leave=True)
     while not q.empty():
         image_path, dest_path = q.get()
-        if(path.isfile(dest_path)):
+        # check destination file is regular file and src,dest file name matches
+        if(path.isfile(dest_path) and (str(image_path.split("/")[-1]) == str(dest_path.split("/")[-1]))):
+            # if src,dest file name same then check content bit by bit
             if (filecmp.cmp(image_path, dest_path, shallow=True)):
                 pbar.update(1)
                 continue
+            # copy file if doesn't exists
             else:
                 shutil.copy(image_path, dest_path)
                 pbar.update(1)
