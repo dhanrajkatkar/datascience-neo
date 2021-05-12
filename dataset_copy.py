@@ -1,7 +1,9 @@
 import shutil
-from os import path, scandir
+from os import path, scandir, remove
 from queue import Queue
 from threading import Thread
+import numpy as np
+
 
 from tqdm import tqdm
 
@@ -9,6 +11,8 @@ from tqdm import tqdm
 NO_OF_THREADS = 4
 queue_objects = [Queue() for i in range(NO_OF_THREADS)]
 
+src_list=[]
+dst_list=[]
 
 # TODO File copy code with all exceptions
 def copy_data(q):
@@ -31,35 +35,54 @@ def copy_data(q):
 
 #  Read all folders recursively
 def read_folders(data_dir, destination_dir):
-    '''
-    Read folders recursively and put files into queues
-
-    Args:
-            data_dir(str): Source path
-            destination_dir(str): Destination path
-
-    Returns:
-            None
-    '''
+    
     folder_elements = scandir(data_dir)
     counter = 0
     # reading all sub-folders of the dataset & tqdm is used for creating a progress bar
     for element in folder_elements:
-        element_path = path.join(data_dir, element)
-        destination_path = path.join(destination_dir, element)
-        print(element_path, destination_path)
-        if path.isfile(element_path) and element_path[-4:] in ['.jpg', '.png', '.bmp']:
+        element_path = path.join(data_dir, element.path)
+
+        destination_path = path.join(destination_dir)
+
+        if element.is_file() and element_path[-4:] in ['.jpg', '.png', '.bmp']:
             queue_objects[counter % NO_OF_THREADS].put(
                 (element_path, destination_path))
-
             counter += 1
+            src_list.append(element.name)
+
         elif element.is_dir():
             read_folders(element_path, destination_path)
+            
+            
+#  reading the destination files
+def read_destination_files(destination_dir):
+    folder_elements = scandir(destination_dir)
+    for element in folder_elements:
+        dst_list.append(element.name)
+        
+#  checking if source file is deleted if any
+def source_check():
+    diff_list = np.setdiff1d(dst_list,src_list)
+    print("The file named" ,diff_list, "is deleted from source")
+    
+    
+
+
+#  Reading the full path and deleting the file present in the path
+def delete_from_destination(path_name):
+    file_path = path.join(path_name)
+    remove(file_path)
+    print("file named", file_path, "is deleted")
+
 
 if __name__ == '__main__':
-    dataset_folder = '/home/webwerks/Desktop/Neosoft_Training/PETA/Reviewed/3DPeS/normal_data'
-    destination_dir = "/home/webwerks/Desktop/Neosoft_Training/PETA/Reviewed/3DPeS/test"
+    dataset_folder = ""
+    destination_dir = ""
     read_folders(dataset_folder, destination_dir)
+    
     # Start n separate threads
     for obj in queue_objects:
         Thread(target=copy_data, args=(obj,)).start()
+    
+    read_destination_files(destination_dir)
+    source_check()
