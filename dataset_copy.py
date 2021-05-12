@@ -94,19 +94,19 @@ def sync_source_destination(destination_dir):
 
 if __name__ == '__main__':
 
-    dataset_folder = r"E:\folder1"
-    destination_dir = r"E:\folder2"
+    dataset_folder = r""
+    destination_dir = r""
     read_folders(dataset_folder, destination_dir)
 
     # Start n separate threads
-    #for obj in queue_objects:
-        #Thread(target=copy_data, args=(obj,)).start()
+    for obj in queue_objects:
+        Thread(target=copy_data, args=(obj,)).start()
     
-    #read_destination_files(destination_dir)
-    #source_check()
+    read_destination_files(destination_dir)
+    source_check()
 
 
     # Calling delete function
-    #delete_from_destination(dest_img_path)
+    delete_from_destination(dest_img_path)
     sync_source_destination(destination_dir)
 
