@@ -1,7 +1,8 @@
 import shutil
-from os import path, scandir
+from os import path, scandir, remove
 from queue import Queue
 from threading import Thread
+
 
 from tqdm import tqdm
 
@@ -45,21 +46,36 @@ def read_folders(data_dir, destination_dir):
     counter = 0
     # reading all sub-folders of the dataset & tqdm is used for creating a progress bar
     for element in folder_elements:
-        element_path = path.join(data_dir, element)
-        destination_path = path.join(destination_dir, element)
-        print(element_path, destination_path)
-        if path.isfile(element_path) and element_path[-4:] in ['.jpg', '.png', '.bmp']:
+        element_path = path.join(data_dir, element.path)
+
+        destination_path = path.join(destination_dir)
+
+        if element.is_file() and element_path[-4:] in ['.jpg', '.png', '.bmp']:
             queue_objects[counter % NO_OF_THREADS].put(
                 (element_path, destination_path))
-
             counter += 1
+
         elif element.is_dir():
             read_folders(element_path, destination_path)
+            
+
+#  Reading the full path and deleting the file present in the path
+def delete_from_destination(path_name):
+    file_path = path.join(path_name)
+    remove(file_path)
+    print("file named", file_path, "is deleted")
+
 
 if __name__ == '__main__':
-    dataset_folder = '/home/webwerks/Desktop/Neosoft_Training/PETA/Reviewed/3DPeS/normal_data'
-    destination_dir = "/home/webwerks/Desktop/Neosoft_Training/PETA/Reviewed/3DPeS/test"
+    dataset_folder = r"#"
+    destination_dir = r"#"
+    dest_img_path=r"#"
+
     read_folders(dataset_folder, destination_dir)
+    
     # Start n separate threads
     for obj in queue_objects:
         Thread(target=copy_data, args=(obj,)).start()
+        
+    # Calling delete function    
+    delete_from_destination(dest_img_path)
