@@ -1,19 +1,20 @@
 import shutil
-from os import path, scandir
+from os import path, scandir, listdir, cpu_count, stat
 from queue import Queue
 from threading import Thread
-
+import filecmp
 from tqdm import tqdm
 
 # Number of threads to execute
-NO_OF_THREADS = 4
+cpuCount = cpu_count()
+NO_OF_THREADS = cpuCount
 queue_objects = [Queue() for i in range(NO_OF_THREADS)]
 
 
 # TODO File copy code with all exceptions
 def copy_data(q):
     '''
-    Take source destination from queue and copy to the given destination 
+    Take source destination from queue and copy to the given destination
 
     Args:
             q(queue): Single queue containing source path of files
@@ -21,11 +22,17 @@ def copy_data(q):
     Returns:
             None
     '''
+
     pbar = tqdm(total=q.qsize(), position=0, leave=True)
     while not q.empty():
         image_path, dest_path = q.get()
-        shutil.copy(image_path, dest_path)
-        pbar.update(1)
+        if(path.isfile(dest_path)):
+            if (filecmp.cmp(image_path, dest_path, shallow=True)):
+                pbar.update(1)
+                continue
+            else:
+                shutil.copy(image_path, dest_path)
+                pbar.update(1)
     pbar.close()
 
 
@@ -41,7 +48,7 @@ def read_folders(data_dir, destination_dir):
     Returns:
             None
     '''
-    folder_elements = scandir(data_dir)
+    folder_elements = listdir(data_dir)
     counter = 0
     # reading all sub-folders of the dataset & tqdm is used for creating a progress bar
     for element in folder_elements:
@@ -56,9 +63,10 @@ def read_folders(data_dir, destination_dir):
         elif element.is_dir():
             read_folders(element_path, destination_path)
 
+
 if __name__ == '__main__':
-    dataset_folder = '/home/webwerks/Desktop/Neosoft_Training/PETA/Reviewed/3DPeS/normal_data'
-    destination_dir = "/home/webwerks/Desktop/Neosoft_Training/PETA/Reviewed/3DPeS/test"
+    dataset_folder = 'read_images'
+    destination_dir = 'dest'
     read_folders(dataset_folder, destination_dir)
     # Start n separate threads
     for obj in queue_objects:
