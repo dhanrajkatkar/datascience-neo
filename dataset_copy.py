@@ -2,7 +2,6 @@ import shutil
 from os import path, scandir, remove, cpu_count
 from queue import Queue
 from threading import Thread
-<<<<<<< HEAD
 import numpy as np
 import filecmp
 from tqdm import tqdm
@@ -76,7 +75,7 @@ def read_destination_files(destination_dir):
         
 #  checking if source file is deleted if any
 def source_check(dst_list,src_list):
-    diff_list = np.setdiff1d(dst_list,src_list)
+    diff_list = [deleted_file for deleted_file in dst_list if deleted_file not in src_list]
     return diff_list
     
 #  Reading the full path and deleting the file present in the path
