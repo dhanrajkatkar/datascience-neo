@@ -1,8 +1,8 @@
 import shutil
-from os import path, scandir
+from os import path, scandir, remove
 from queue import Queue
 from threading import Thread
-import os
+
 
 from tqdm import tqdm
 
@@ -60,20 +60,18 @@ def read_folders(data_dir, destination_dir):
 
 
 def delete_from_destination(file_name, destination_dir):
-    path = os.path.join(destination_dir, file_name)
-    os.remove(path)
-    print("file named", path, "is deleted")
+    file_path = path.join(destination_dir, file_name)
+    remove(file_path)
+    print("file named", file_path, "is deleted")
 
 
 if __name__ == '__main__':
-    dataset_folder = r"E:\\Imagesforscan"
-    destination_dir = r"E:\\folder1"
-    #  dataset_folder = '/home/webwerks/Desktop/Neosoft_Training/PETA/Reviewed/3DPeS/normal_data'
-    #  destination_dir = "/home/webwerks/Desktop/Neosoft_Training/PETA/Reviewed/3DPeS/test"
-    file_name = "#"
+    dataset_folder = r"#"
+    destination_dir = r"#"
+    file_name = "0003.jpg"
 
     read_folders(dataset_folder, destination_dir)
-    #  delete_from_destination(file_name, destination_dir)
+    delete_from_destination(file_name, destination_dir)
 
     # Start n separate threads
     for obj in queue_objects:
