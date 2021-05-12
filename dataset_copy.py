@@ -47,26 +47,34 @@ def read_folders(data_dir, destination_dir):
     folder_elements = scandir(data_dir)
     counter = 0
     # reading all sub-folders of the dataset & tqdm is used for creating a progress bar
-    for element in folder_elements:
+    for element in folder_elements:       
         element_path = path.join(data_dir, element)
-        destination_path = path.join(destination_dir, element)
+        #destination_path = path.join(destination_dir, element)
 
 
         if path.isfile(element_path) and element_path[-4:] in ['.jpg', '.png', '.bmp']:
             queue_objects[counter % NO_OF_THREADS].put(
-                (element_path, destination_path))
-
-            counter += 1
-        elif element.is_dir()::
-            read_folders(element_path, destination_path)
+                (element_path, destination_dir))
+            counter+=1
+            
+        elif element.is_dir():
+            read_folders(element_path, destination_dir)
+            
+def delete_from_destination(file_name,destination_dir):
+    path = os.path.join(destination_dir, file_name)
+    os.remove(path)
+    
 
 
 if __name__ == '__main__':
-    dataset_folder = "#"
-    destination_dir = "#"
+    dataset_folder = "E:\\Imagesforscan"
+    destination_dir = "E:\\folder1"
+    file_name = "0002.jpg"
     read_folders(dataset_folder, destination_dir)
+    delete_from_destination(file_name,destination_dir)
 
     # Start n separate threads
     for obj in queue_objects:
         Thread(target=copy_data, args=(obj,)).start()
+        print(obj.qsize())
 
