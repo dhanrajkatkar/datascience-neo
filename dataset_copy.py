@@ -57,10 +57,11 @@ def read_folders(data_dir, destination_dir):
 
         elif element.is_dir():
             read_folders(element_path, destination_path)
+            
 
-
-def delete_from_destination(file_name, destination_dir):
-    file_path = path.join(destination_dir, file_name)
+#  Reading the full path and deleting the file present in the path
+def delete_from_destination(path_name):
+    file_path = path.join(path_name)
     remove(file_path)
     print("file named", file_path, "is deleted")
 
@@ -68,11 +69,13 @@ def delete_from_destination(file_name, destination_dir):
 if __name__ == '__main__':
     dataset_folder = r"#"
     destination_dir = r"#"
-    file_name = "0003.jpg"
+    dest_img_path=r"#"
 
     read_folders(dataset_folder, destination_dir)
-    delete_from_destination(file_name, destination_dir)
-
+    
     # Start n separate threads
     for obj in queue_objects:
         Thread(target=copy_data, args=(obj,)).start()
+        
+    # Calling delete function    
+    delete_from_destination(dest_img_path)
