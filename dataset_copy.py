@@ -59,9 +59,10 @@ def read_destination_files(destination_dir):
         dst_list.append(element.name)
         
 #  checking if source file is deleted if any
-def source_check():
+def source_check(dst_list,src_list):
     diff_list = np.setdiff1d(dst_list,src_list)
-    print("The file named" ,diff_list, "is deleted from source")
+    return diff_list
+
     
 #  Reading the full path and deleting the file present in the path
 def delete_from_destination(path_name):
