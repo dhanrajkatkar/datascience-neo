@@ -1,3 +1,4 @@
+import filecmp
 from tqdm import tqdm
 import numpy as np
 import shutil
@@ -7,7 +8,6 @@ from threading import Thread
 
 
 # Number of threads to execute
-
 NO_OF_THREADS = cpu_count()
 queue_objects = [Queue() for i in range(NO_OF_THREADS)]
 
@@ -108,7 +108,8 @@ def read_destination_files(destination_dir):
 
 #  checking if source file is deleted if any
 def source_check(dst_list, src_list):
-    diff_list = np.setdiff1d(dst_list, src_list)
+    diff_list = [
+        deleted_file for deleted_file in dst_list if deleted_file not in src_list]
     return diff_list
 
 
@@ -116,20 +117,28 @@ def source_check(dst_list, src_list):
 def delete_from_destination(path_name):
     file_path = path.join(path_name)
     remove(file_path)
-    print("file named", file_path, "is deleted")
+
+
+#  if file not present in Source deleting it in destination too(Syncing)
+def sync_source_destination(destination_dir):
+    folder_elements = scandir(destination_dir)
+    for element in folder_elements:
+        if element.name not in src_list:
+            delete_from_destination(element.path)
 
 
 if __name__ == '__main__':
-
-    dataset_folder = "#"
-    destination_dir = "#"
+    dataset_folder = r""
+    destination_dir = r""
     read_folders(dataset_folder, destination_dir)
 
     # Start n separate threads
     for obj in queue_objects:
         Thread(target=copy_data, args=(obj,)).start()
+
     read_destination_files(destination_dir)
     source_check()
 
     # Calling delete function
     delete_from_destination(dest_img_path)
+    sync_source_destination(destination_dir)
