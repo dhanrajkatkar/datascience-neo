@@ -5,11 +5,12 @@ import shutil
 from os import path, scandir, remove, cpu_count, stat
 from queue import Queue
 from threading import Thread
+from tkinter import Tk, Button, Frame
 
 
 class FileOperations:
 
-    def __init__(self):
+    def __init__(self, master):
         # Number of threads to execute
         self.NO_OF_THREADS = cpu_count()
         self.queue_objects = [Queue() for i in range(self.NO_OF_THREADS)]
@@ -20,6 +21,10 @@ class FileOperations:
         self.read_folders(self.dataset_folder, self.destination_folder)
         self.read_destination_files()
         self.source_check()
+        frame = Frame(master)
+        frame.pack()
+        self.Transfer = Button(master, text="Copy", command=lambda: self.run())
+        self.Transfer.pack(pady=20)
 
     @staticmethod
     def check_file(image_path, dest_path):
@@ -127,5 +132,8 @@ class FileOperations:
 
     
 if __name__ == '__main__':
-    cls_obj = FileOperations()
-    cls_obj.run()
+    root = Tk()
+    root.title('Copying the Data')
+    root.geometry("400x200")
+    cls_obj = FileOperations(root)
+    root.mainloop()
