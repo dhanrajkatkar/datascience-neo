@@ -5,6 +5,8 @@ from queue import Queue
 from threading import Thread
 from tkinter import Tk, Button, Frame
 import cv2
+import logging
+from datetime import datetime
 from create_dataset import CreateDataset
 from project_config import *
 
@@ -230,6 +232,11 @@ class ExportAnnotations:
         print("Initialized...")
 
         self.default_lookup_path = DEFAULT_LOOKUP_PATH
+        logging.basicConfig(
+            filename='/home/webwerks/Desktop/test/test.log',
+            filemode='a',
+            level=logging.DEBUG,
+            format=f'%(levelname)s → {datetime.now()} → %(name)s:%(message)s')
 
         if not path.exists(path.join("training", self.project_name)):
             base_path = getcwd()
@@ -260,6 +267,7 @@ class ExportAnnotations:
                                         self.video_data.append((i.path, txt))
                                     else:
                                         # log this
+                                        logging.debug(vid_file + ' ' + 'pair file not found')
                                         pass
                             self.classes.append(fl.name)
                             cls_file.write(fl + '\n')
