@@ -1,12 +1,12 @@
-import filecmp
 from tqdm import tqdm
-import numpy as np
 import shutil
-from os import path, scandir, remove, cpu_count, stat, walk
+from os import path, scandir, remove, cpu_count, stat, walk, makedirs, getcwd
 from queue import Queue
 from threading import Thread
-from tkinter import Tk, Button, Frame, filedialog
+from tkinter import Tk, Button, Frame
 import cv2
+from create_dataset import CreateDataset
+from project_config import *
 
 
 class FileOperations:
@@ -17,7 +17,7 @@ class FileOperations:
         frame.pack()
 
         self.NO_OF_THREADS = cpu_count()
-        self.queue_objects = [Queue() for i in range(self.NO_OF_THREADS)]
+        self.queue_objects = [Queue() for _ in range(self.NO_OF_THREADS)]
         self.dataset_folder = r"E:\images"
         self.destination_folder = r"E:\destination"
         self.src_list = []
@@ -89,15 +89,12 @@ class FileOperations:
         # reading all sub-folders of the dataset & tqdm is used for creating a progress bar
         for element in folder_elements:
             element_path = element.path
-
             destination_path = path.join(destination_folder, element.name)
-
             if element.is_file() and element_path[-4:] in ['.jpg', '.png', '.bmp']:
                 self.queue_objects[counter % self.NO_OF_THREADS].put(
                     (element_path, destination_path))
                 counter += 1
                 self.src_list.append(element.name)
-
             elif element.is_dir():
                 self.read_folders(element_path, destination_path)
 
@@ -116,6 +113,13 @@ class FileOperations:
     #  Reading the full path and deleting the file present in the path
     @staticmethod
     def delete_from_destination(path_name):
+        """
+                Deletes the specified file
+                Args:
+                        path_name(str): File path
+                Returns:
+                        None
+                """
         file_path = path.join(path_name)
         remove(file_path)
 
@@ -133,14 +137,11 @@ class FileOperations:
         self.sync_source_destination()
 
 
-'''Class Logic for Validation of the data '''
+class DatasetClass:
+    """ Class Logic for Validation of the data """
 
-
-class DS_Class:
-    def __init__(self):
-        pass
-
-    def iter_valid_files(self, path1):
+    @staticmethod
+    def iter_valid_files(path1):
         for subdir, dirs, files in walk(path1):
             for file in files:
                 file_path = path.join(subdir, file)
@@ -149,28 +150,21 @@ class DS_Class:
                 file_number, delimiter, file_ext = aux[2].rpartition(".")
                 yield file_path, file_name, file_number, file_ext
 
-    def is_extension_valid(self, file_ext):
+    @staticmethod
+    def is_extension_valid(file_ext):
         if file_ext == 'jpg' or file_ext == 'txt':
             return True
         return False
 
-    def pair_file_exists(self, file_name, file_number, file_ext):
+    @staticmethod
+    def pair_file_exists(file_name, file_number, file_ext):
         file_ext_to_check = 'txt' if file_ext == 'jpg' else 'jpg'
         if path.isfile(file_name + "_" + file_number + "." + file_ext_to_check):
             return True
         return False
 
 
-class DS_Creator_NNReadable(DS_Class):
-    """
-    Creates a folder in which there will be all necessary files to train the neural network
-    """
-
-    def __init__(self):
-        pass
-
-
-class DS_Validator(DS_Class):
+class DatasetValidator(DatasetClass):
     """
     Validates that a given path contains a dataset was correctly labelled
     """
@@ -179,12 +173,12 @@ class DS_Validator(DS_Class):
         frame = Frame(master)
         frame.pack()
         self.Validate = Button(master, text="Validate",
-                               command=lambda: self.visual_inspection("E:\coco dataset\coco_v0"))
+                               command=lambda: self.visual_inspection(r"E:\coco dataset\coco_v0"))
         self.Validate.pack(pady=20)
 
-    def visual_inspection(self, path):
+    def visual_inspection(self, dataset_dir):
         filepaths_dict = {}
-        for file_path, file_name, file_number, file_ext in self.iter_valid_files(path):
+        for file_path, file_name, file_number, file_ext in self.iter_valid_files(dataset_dir):
             if not self.is_extension_valid(file_ext):
                 print("not a valid extension")
                 continue
@@ -197,11 +191,12 @@ class DS_Validator(DS_Class):
                 filepaths_dict[file_name] += 0.5
             else:
                 filepaths_dict[file_name] = 0.5
-                image = cv2.imread(file_name + "_" + file_number + ".jpg")
+                img_path = "{}_{}.jpg".format(file_name, file_number)
+                image = cv2.imread(img_path)
                 img_height, img_width, img_channels = image.shape
                 image = cv2.resize(image, (800, int(800 / img_width * img_height)))
                 img_height, img_width, img_channels = image.shape
-                with open(file_name + "_" + file_number + ".txt", 'r') as fh:
+                with open(img_path, 'r') as fh:
                     for line in fh:
                         cat, cx, cy, w, h = line.split(" ")
                         cx, cy, w, h = float(cx), float(cy), float(w), float(h)
@@ -214,6 +209,87 @@ class DS_Validator(DS_Class):
                 cv2.waitKey()
 
         print(filepaths_dict)
+
+
+class ExportAnnotations:
+    def __init__(self):
+        self.status_msg = None
+        self.classes = []
+        self.project_name = PROJECT_NAME
+        self.training_path = path.join("training", self.project_name)
+        self.video_file_path = r''
+        self.annotation_file_path = r''
+        self.class_file_path = r''
+        self.dataset_export_path = r''
+        self.cfg_file_yolo = path.join(self.training_path, self.project_name + ".cfg")
+        self.data_file_yolo = path.join(self.training_path, self.project_name + ".data")
+        self.names_file_yolo = path.join(self.training_path, self.project_name + ".names")
+        self.training_images_list = path.join(self.training_path, "train.txt")
+        self.test_images_list = path.join(self.training_path, "test.txt")
+        self.video_data = []
+        print("Initialized...")
+
+        self.default_lookup_path = DEFAULT_LOOKUP_PATH
+
+        if not path.exists(path.join("training", self.project_name)):
+            base_path = getcwd()
+            new_dir = path.join(base_path, "training")
+            proj_dir = path.join(new_dir, self.project_name)
+            makedirs(proj_dir)
+            bak_dir = path.join(proj_dir, "backup")
+            makedirs(bak_dir)
+        self.training_path = path.join("training", self.project_name)
+
+    def fast_scandir(self, dirname):
+        subfolders = [f for f in scandir(dirname) if f.is_dir()]
+        for dirname in list(subfolders):
+            subfolders.extend(self.fast_scandir(dirname))
+        return subfolders
+
+    def export_classes_file(self):
+        with open(self.class_file_path, 'w') as cls_file:
+            for fl in self.fast_scandir('/home/webwerks/Desktop/cemtrex'):
+                if len(fl.name) == 13:
+                    try:
+                        if int(fl.name):
+                            # scan for videos
+                            for i in scandir(fl.path):
+                                for vid_file in scandir(i.path):
+                                    txt = i.path.split('.')[0]+'txt'
+                                    if i.name[-4:] in ['.mp4', '.avi', '.mkv'] and path.exists(txt):
+                                        self.video_data.append((i.path, txt))
+                                    else:
+                                        # log this
+                                        pass
+                            self.classes.append(fl.name)
+                            cls_file.write(fl + '\n')
+                    except ValueError:
+                        continue
+
+    # display status message
+    def display_message(self, msg):
+        print(msg)
+        self.status_msg.set(msg)
+
+    # check if all paths are selected before proceeding
+    def paths_saved(self):
+        return bool(self.video_file_path) & bool(self.annotation_file_path) & bool(self.class_file_path) & bool(
+            self.dataset_export_path)
+
+    def save_paths(self):
+        for data in self.video_data:
+            if self.paths_saved():
+                self.status_msg.set("Generating normalized dataset...")
+                object_dataset = CreateDataset(data[0], data[1], self.class_file_path,
+                                               self.dataset_export_path)
+                created = object_dataset.create_dataset() or None
+                if created:
+                    self.display_message("Normalized dataset generated for training!")
+                else:
+                    self.display_message("Something went wrong!")
+            else:
+                msg = "Please select valid paths !"
+                self.display_message(msg)
 
 
 if __name__ == '__main__':
@@ -230,5 +306,4 @@ if __name__ == '__main__':
     root.resizable(1, 1)
     root.configure(background="#515151")
     cls_obj = FileOperations(root)
-    validator = DS_Validator(root)
     root.mainloop()
