@@ -3,12 +3,16 @@ import shutil
 from os import path, scandir, remove, cpu_count, stat, walk, makedirs, getcwd, rmdir
 from queue import Queue
 from threading import Thread
-from tkinter import Tk, Button, Frame
+from tkinter import Tk, Button, Frame, StringVar, Message
 import cv2
 import logging
 from datetime import datetime
 from create_dataset import CreateDataset
 import config
+from glob import glob
+from sys import platform
+import subprocess
+from scripts.gen_anchors import genrate_anchor_file
 
 
 class FileOperations:
@@ -178,6 +182,7 @@ class DatasetValidator(DatasetClass):
                                command=lambda: self.visual_inspection(r"E:\coco dataset\coco_v0"))
         self.Validate.pack(pady=20)
 
+#  validate button todo
     def visual_inspection(self, dataset_dir):
         filepaths_dict = {}
         for file_path, file_name, file_number, file_ext in self.iter_valid_files(dataset_dir):
@@ -214,8 +219,26 @@ class DatasetValidator(DatasetClass):
 
 
 class ExportAnnotations:
-    def __init__(self):
-        self.status_msg = None
+    def __init__(self, master):
+        frame = Frame(master)
+        frame.pack()
+
+        self.NO_OF_THREADS = cpu_count()
+        self.queue_objects = [Queue() for _ in range(self.NO_OF_THREADS)]
+        self.Transfer = Button(master, text="sync", command=lambda: self.run())
+        self.Transfer.pack(pady=20)
+        # self.font_style = ('tahoma', 9, 'bold')
+        #
+        # # dashboard subframes
+        # self.frame_dboard = Frame(self.window)
+        # self.frame_a = Frame(self.frame_dboard, height=10, bd=1)
+        # self.frame_b = Frame(self.frame_dboard, height=5, bd=1)
+        #
+        # # status message widget
+        # self.status_msg = StringVar()
+        # self.status = Message(self.frame_dboard, textvariable=self.status_msg)
+        # self.status.config(font=self.font_style, width=500, fg="red")
+
         self.classes = []
         self.video_data = []
         self.dataset_path = config.DATASET_PATH
@@ -230,6 +253,14 @@ class ExportAnnotations:
         self.test_images_list = path.join(self.training_path, "test.txt")
         print("Initialized...")
 
+        self.no_of_classes = 0
+        self.select_classfile = ""
+        self.no_of_anchors = config.NO_OF_ANCHORS
+        self.select_video_file = ""
+        self.select_annotation_file = ""
+        self.select_export_path = ""
+        self.yolo_path = config.YOLOPATH
+        self.export_classes_file()
         logging.basicConfig(
             filename=config.LOG_FILE,
             filemode='a',
@@ -237,8 +268,9 @@ class ExportAnnotations:
             format=f'%(levelname)s → {datetime.now()} → %(name)s:%(message)s')
 
         # remove previous dataset
-        rmdir(self.dataset_path)
-        makedirs(self.dataset_path)
+        if path.exists(self.dataset_export_path):
+            rmdir(self.dataset_export_path)
+        makedirs(self.dataset_export_path)
 
         if not path.exists(path.join("training", self.project_name)):
             base_path = getcwd()
@@ -248,43 +280,42 @@ class ExportAnnotations:
             bak_dir = path.join(proj_dir, "backup")
             makedirs(bak_dir)
 
-
-    def fast_scandir(self, dirname):
-        subfolders = [f for f in scandir(dirname) if f.is_dir()]
-        for dirname in list(subfolders):
-            subfolders.extend(self.fast_scandir(dirname))
-        return subfolders
+    def fast_scandir(self, dir_name):
+        sub_folders = [f for f in scandir(dir_name) if f.is_dir()]
+        for dir_name in list(sub_folders):
+            sub_folders.extend(self.fast_scandir(dir_name))
+        return sub_folders
 
     def export_classes_file(self):
         with open(self.class_file_path, 'w') as cls_file:
             for fl in self.fast_scandir(self.dataset_path):
-                if len(fl.name) == 13:
-                    try:
-                        if int(fl.name):
-                            for i in scandir(fl.path):
-                                for vid_file in scandir(i.path):
-                                    txt = i.path.split('.')[0] + 'txt'
-                                    if i.name[-4:] in ['.mp4', '.avi', '.mkv'] and path.exists(txt):
-                                        self.video_data.append((i.path, txt))
-                                    else:
-                                        logging.debug(vid_file + ' ' + 'pair file not found')
-                                        pass
-                            self.classes.append(fl.name)
-                            cls_file.write(fl + '\n')
-                    except ValueError:
-                        continue
+                try:
+                    if len(fl.name) == 13 and int(fl.name):
+                        for i in scandir(fl.path):
+                            for vid_file in scandir(i.path):
+                                txt = vid_file.path.split('.')[0] + '_gt.txt'
+                                if vid_file.name[-4:] in ['.mp4', '.avi', '.mkv'] and path.exists(txt):
+                                    self.video_data.append((vid_file.path, txt))
+                                else:
+                                    logging.debug(vid_file.path + ' ' + 'pair file not found')
+                        self.classes.append(fl.name)
+                        cls_file.write(fl.name + '\n')
+                except ValueError:
+                    continue
 
     # display status message
     def display_message(self, msg):
         print(msg)
-        self.status_msg.set(msg)
+        # self.status_msg.set(msg)
 
-    def save_paths(self):
-        for data in self.video_data:
+    def save_paths(self, q):
+        pbar = tqdm(total=q.qsize(), position=0, leave=True)
+        while not q.empty():
+            data = q.get()
             # data : (video_path, txt_path)
             if bool(data[0]) & bool(data[1]) & bool(self.class_file_path) & bool(
                     self.dataset_export_path):
-                self.status_msg.set("Generating normalized dataset...")
+                # self.status_msg.set("Generating normalized dataset...")
                 object_dataset = CreateDataset(data[0], data[1], self.class_file_path,
                                                self.dataset_export_path)
                 created = object_dataset.create_dataset() or None
@@ -295,6 +326,91 @@ class ExportAnnotations:
             else:
                 msg = "Please select valid paths !"
                 self.display_message(msg)
+            pbar.update(1)
+
+    # creating train and test dataset from obtained normalized dataset
+    def create_train_test_data(self):
+        with open(self.training_images_list, "w+") as train_txt, open(self.test_images_list, "w+") as test_txt:
+            image_counter = 0
+            for image in glob(self.select_export_path + "/*jpg"):
+                txt_file = image.replace("jpg", "txt")
+                if path.exists(txt_file):
+                    if image_counter % 10 == 0:
+                        print(image, image_counter)
+                        test_txt.write(image + "\n")
+                        image_counter += 1
+                    else:
+                        train_txt.write(image + "\n")
+                        image_counter += 1
+
+    # creating and writing into yolo_objects.names file from class.txt file
+    def create_name_file(self):
+        with open(self.names_file_yolo, "w+") as names_file:
+            with open(self.select_classfile, "r") as classfile:
+                for line in classfile:
+                    self.no_of_classes += 1
+                    names_file.write(line)
+
+    # create and writing into yolo_objects.data file
+    def create_data_file(self):
+        with open(self.data_file_yolo, "w+") as data_file:
+            data_file.write("classes= " + str(self.no_of_classes) + "\n")
+            data_file.write("names= " + self.names_file_yolo + "\n")
+            data_file.write("train= " + self.training_images_list + "\n")
+            data_file.write("valid= " + self.test_images_list + "\n")
+            data_file.write("backup= " + self.training_path + "\\backup")
+
+    # create and writing into yolo_objects.cfg from yolov3.cfg
+    def create_cfg_file(self):
+
+        yolo_layer_lines = [602, 688, 775]
+        filter_line_list = [i - 4 for i in yolo_layer_lines]
+        class_line_list = [i + 3 for i in yolo_layer_lines]
+        anchors_line_list = [i + 2 for i in yolo_layer_lines]
+
+        with open("sample_yolov3.cfg", "r") as cfg_yolo, open(self.cfg_file_yolo, "w+") as new_cfg:
+            anchors_path = self.training_path
+            genrate_anchor_file(self.training_images_list, self.training_path, int(self.no_of_anchors))
+            with open(anchors_path + "\\anchors" + self.no_of_anchors + ".txt") as anchorfile:
+                anchors = anchorfile.readline()
+                print(anchors)
+            for i, line in enumerate(cfg_yolo):
+                if i in filter_line_list:
+                    filters = (self.no_of_classes + 5) * 3
+                    new_cfg.write("filters=" + str(filters) + "\n")
+                elif i in class_line_list:
+                    new_cfg.write("classes=" + str(self.no_of_classes) + "\n")
+                elif i in anchors_line_list:
+                    new_cfg.write("anchors = " + anchors)
+                else:
+                    new_cfg.write(line)
+
+    # todo train button
+    def start_training(self):
+        self.display_message("Generating normalized dataset...")
+
+        self.create_train_test_data()
+        self.create_name_file()
+        self.create_data_file()
+        self.create_cfg_file()
+
+        # initiate training
+        if platform == "win32":
+            command_win = [self.yolo_path + "\\darknet.exe", "detector", "train", self.data_file_yolo,
+                           self.cfg_file_yolo,
+                           self.yolo_path + "\\darknet53.conv.74"]
+            subprocess.call(command_win)
+
+    # todo dataset sync button
+    # Start n separate threads
+    def run(self):
+        counter = 0
+        # reading all sub-folders of the dataset
+        for element in self.video_data:
+            self.queue_objects[counter % self.NO_OF_THREADS].put(element)
+            counter += 1
+        for obj in self.queue_objects:
+            Thread(target=self.save_paths, args=(obj,)).start()
 
 
 if __name__ == '__main__':
@@ -310,5 +426,7 @@ if __name__ == '__main__':
     root.geometry('%dx%d+%d+%d' % (box_widht, box_height, x, y))
     root.resizable(1, 1)
     root.configure(background="#515151")
-    cls_obj = FileOperations(root)
+    # cls_obj = FileOperations(root)
+    cls_obj = DatasetValidator(root)
+    export_annos_obj = ExportAnnotations(root)
     root.mainloop()

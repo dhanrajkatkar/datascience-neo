@@ -45,15 +45,13 @@ class CreateDataset:
                         y = round((cy / frame_height), 4)
                         width_normalized = round((width / frame_width), 4)
                         height_normalized = round((height / frame_height), 4)
-                        print(str(self.classes.index(class_name)) + " " + str(x) + " " + str(y) + " " + str(
-                            width_normalized) + " " +
-                              str(height_normalized))
                         f_txt.write(
                             str(self.classes.index(class_name)) + " " + str(x) + " " + str(y) + " " + str(
                                 width_normalized) + " " +
                             str(height_normalized) + "\n")
                     cv2.imshow("image", frame)
-                    im_write_path = os.path.join(self.export_dataset_path,video_name[1]) + "_" + str(frame_number) + ".jpg"
+                    im_write_path = os.path.join(self.export_dataset_path,
+                                                 video_name[1]) + "_" + str(frame_number) + ".jpg"
                     cv2.imwrite(im_write_path, frame_copy)
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     cap.release()
