@@ -1,6 +1,6 @@
 from tqdm import tqdm
 import shutil
-from os import path, scandir, remove, cpu_count, stat, walk, makedirs, getcwd
+from os import path, scandir, remove, cpu_count, stat, walk, makedirs, getcwd, rmdir
 from queue import Queue
 from threading import Thread
 from tkinter import Tk, Button, Frame
@@ -8,7 +8,7 @@ import cv2
 import logging
 from datetime import datetime
 from create_dataset import CreateDataset
-from project_config import *
+import config
 
 
 class FileOperations:
@@ -217,26 +217,28 @@ class ExportAnnotations:
     def __init__(self):
         self.status_msg = None
         self.classes = []
-        self.project_name = PROJECT_NAME
+        self.video_data = []
+        self.dataset_path = config.DATASET_PATH
+        self.project_name = config.PROJECT_NAME
         self.training_path = path.join("training", self.project_name)
-        self.video_file_path = r''
-        self.annotation_file_path = r''
-        self.class_file_path = r''
-        self.dataset_export_path = r''
+        self.class_file_path = config.CLASS_FILE_PATH
+        self.dataset_export_path = config.DATASET_EXPORT_PATH
         self.cfg_file_yolo = path.join(self.training_path, self.project_name + ".cfg")
         self.data_file_yolo = path.join(self.training_path, self.project_name + ".data")
         self.names_file_yolo = path.join(self.training_path, self.project_name + ".names")
         self.training_images_list = path.join(self.training_path, "train.txt")
         self.test_images_list = path.join(self.training_path, "test.txt")
-        self.video_data = []
         print("Initialized...")
 
-        self.default_lookup_path = DEFAULT_LOOKUP_PATH
         logging.basicConfig(
-            filename='/home/webwerks/Desktop/test/test.log',
+            filename=config.LOG_FILE,
             filemode='a',
             level=logging.DEBUG,
             format=f'%(levelname)s → {datetime.now()} → %(name)s:%(message)s')
+
+        # remove previous dataset
+        rmdir(self.dataset_path)
+        makedirs(self.dataset_path)
 
         if not path.exists(path.join("training", self.project_name)):
             base_path = getcwd()
@@ -245,7 +247,7 @@ class ExportAnnotations:
             makedirs(proj_dir)
             bak_dir = path.join(proj_dir, "backup")
             makedirs(bak_dir)
-        self.training_path = path.join("training", self.project_name)
+
 
     def fast_scandir(self, dirname):
         subfolders = [f for f in scandir(dirname) if f.is_dir()]
@@ -255,18 +257,16 @@ class ExportAnnotations:
 
     def export_classes_file(self):
         with open(self.class_file_path, 'w') as cls_file:
-            for fl in self.fast_scandir('/home/webwerks/Desktop/cemtrex'):
+            for fl in self.fast_scandir(self.dataset_path):
                 if len(fl.name) == 13:
                     try:
                         if int(fl.name):
-                            # scan for videos
                             for i in scandir(fl.path):
                                 for vid_file in scandir(i.path):
-                                    txt = i.path.split('.')[0]+'txt'
+                                    txt = i.path.split('.')[0] + 'txt'
                                     if i.name[-4:] in ['.mp4', '.avi', '.mkv'] and path.exists(txt):
                                         self.video_data.append((i.path, txt))
                                     else:
-                                        # log this
                                         logging.debug(vid_file + ' ' + 'pair file not found')
                                         pass
                             self.classes.append(fl.name)
@@ -279,14 +279,11 @@ class ExportAnnotations:
         print(msg)
         self.status_msg.set(msg)
 
-    # check if all paths are selected before proceeding
-    def paths_saved(self):
-        return bool(self.video_file_path) & bool(self.annotation_file_path) & bool(self.class_file_path) & bool(
-            self.dataset_export_path)
-
     def save_paths(self):
         for data in self.video_data:
-            if self.paths_saved():
+            # data : (video_path, txt_path)
+            if bool(data[0]) & bool(data[1]) & bool(self.class_file_path) & bool(
+                    self.dataset_export_path):
                 self.status_msg.set("Generating normalized dataset...")
                 object_dataset = CreateDataset(data[0], data[1], self.class_file_path,
                                                self.dataset_export_path)
