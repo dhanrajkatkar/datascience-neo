@@ -246,6 +246,8 @@ class ExportAnnotations:
         self.dataset_path = config.DATASET_PATH
         self.project_name = config.PROJECT_NAME
         self.training_path = path.join("training", self.project_name)
+        if not path.exists('training'):
+            makedirs('training')
         self.class_file_path = config.CLASS_FILE_PATH
         if not path.exists(self.class_file_path):
             with open(self.class_file_path, 'w'):
@@ -388,14 +390,12 @@ class ExportAnnotations:
         self.create_name_file()
         self.create_data_file()
         self.create_cfg_file()
-        print('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
         # initiate training
         if platform == "linux":
             command_win = [self.yolo_path + "/darknet", "detector", "train", self.data_file_yolo,
                            self.cfg_file_yolo,
                            self.yolo_path + "/darknet53.conv.74"]
             subprocess.call(command_win)
-        print('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz')
 
     # todo dataset sync button
     # Start n separate threads
