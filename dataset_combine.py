@@ -225,7 +225,9 @@ class ExportAnnotations:
 
         self.NO_OF_THREADS = cpu_count()
         self.queue_objects = [Queue() for _ in range(self.NO_OF_THREADS)]
-        self.Transfer = Button(master, text="sync", command=lambda: self.run())
+        self.Transfer = Button(master, text="sync", command=lambda: self.sync_data())
+        self.Transfer.pack(pady=20)
+        self.Transfer = Button(master, text="train", command=lambda: self.start_training())
         self.Transfer.pack(pady=20)
         # self.font_style = ('tahoma', 9, 'bold')
         #
@@ -257,11 +259,7 @@ class ExportAnnotations:
         print("Initialized...")
 
         self.no_of_classes = 0
-        self.select_classfile = ""
         self.no_of_anchors = config.NO_OF_ANCHORS
-        self.select_video_file = ""
-        self.select_annotation_file = ""
-        self.select_export_path = ""
         self.yolo_path = config.YOLOPATH
         self.export_classes_file()
         logging.basicConfig(
@@ -269,11 +267,6 @@ class ExportAnnotations:
             filemode='a',
             level=logging.DEBUG,
             format=f'%(levelname)s → {datetime.now()} → %(name)s:%(message)s')
-
-        # remove previous dataset
-        if path.exists(self.dataset_export_path):
-            shutil.rmtree(self.dataset_export_path, ignore_errors=True)
-        makedirs(self.dataset_export_path)
 
         if not path.exists(path.join("training", self.project_name)):
             base_path = getcwd()
@@ -335,7 +328,7 @@ class ExportAnnotations:
     def create_train_test_data(self):
         with open(self.training_images_list, "w+") as train_txt, open(self.test_images_list, "w+") as test_txt:
             image_counter = 0
-            for image in glob(self.select_export_path + "/*jpg"):
+            for image in glob(self.dataset_export_path + "/*jpg"):
                 txt_file = image.replace("jpg", "txt")
                 if path.exists(txt_file):
                     if image_counter % 10 == 0:
@@ -349,7 +342,7 @@ class ExportAnnotations:
     # creating and writing into yolo_objects.names file from class.txt file
     def create_name_file(self):
         with open(self.names_file_yolo, "w+") as names_file:
-            with open(self.select_classfile, "r") as classfile:
+            with open(self.class_file_path, "r") as classfile:
                 for line in classfile:
                     self.no_of_classes += 1
                     names_file.write(line)
@@ -361,7 +354,7 @@ class ExportAnnotations:
             data_file.write("names= " + self.names_file_yolo + "\n")
             data_file.write("train= " + self.training_images_list + "\n")
             data_file.write("valid= " + self.test_images_list + "\n")
-            data_file.write("backup= " + self.training_path + "\\backup")
+            data_file.write("backup= " + self.training_path + "/backup")
 
     # create and writing into yolo_objects.cfg from yolov3.cfg
     def create_cfg_file(self):
@@ -372,9 +365,8 @@ class ExportAnnotations:
         anchors_line_list = [i + 2 for i in yolo_layer_lines]
 
         with open("sample_yolov3.cfg", "r") as cfg_yolo, open(self.cfg_file_yolo, "w+") as new_cfg:
-            anchors_path = self.training_path
             genrate_anchor_file(self.training_images_list, self.training_path, int(self.no_of_anchors))
-            with open(anchors_path + "\\anchors" + self.no_of_anchors + ".txt") as anchorfile:
+            with open("{}/anchors{}.txt".format(self.training_path, self.no_of_anchors)) as anchorfile:
                 anchors = anchorfile.readline()
                 print(anchors)
             for i, line in enumerate(cfg_yolo):
@@ -396,17 +388,22 @@ class ExportAnnotations:
         self.create_name_file()
         self.create_data_file()
         self.create_cfg_file()
-
+        print('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
         # initiate training
-        if platform == "win32":
+        if platform == "linux":
             command_win = [self.yolo_path + "/darknet", "detector", "train", self.data_file_yolo,
                            self.cfg_file_yolo,
-                           self.yolo_path + "\\darknet53.conv.74"]
+                           self.yolo_path + "/darknet53.conv.74"]
             subprocess.call(command_win)
+        print('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz')
 
     # todo dataset sync button
     # Start n separate threads
-    def run(self):
+    def sync_data(self):
+        # remove previous dataset
+        if path.exists(self.dataset_export_path):
+            shutil.rmtree(self.dataset_export_path, ignore_errors=True)
+        makedirs(self.dataset_export_path)
         counter = 0
         # reading all sub-folders of the dataset
         for element in self.video_data:

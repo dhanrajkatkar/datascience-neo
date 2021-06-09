@@ -1,5 +1,5 @@
 # change to your project name
-PROJECT_NAME = 'Custom_Object1'
+PROJECT_NAME = 'custom_object1'
 
 # change to your dataset folder
 DATASET_PATH = '/home/webwerks/Desktop/go2market/dataset/test'
@@ -11,4 +11,4 @@ LOG_FILE = r'/home/webwerks/Desktop/test.log'
 YOLOPATH = 'models/yolo/darknet'
 
 
-NO_OF_ANCHORS = 5
+NO_OF_ANCHORS = 1

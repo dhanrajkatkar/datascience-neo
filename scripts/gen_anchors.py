@@ -136,6 +136,7 @@ def genrate_anchor_file(filelist, output_dir, num_clusters):
     else:
         anchor_file = join(output_dir, 'anchors%d.txt' % num_clusters)
         indices = [random.randrange(annotation_dims.shape[0]) for i in range(num_clusters)]
+        print(indices)
         centroids = annotation_dims[indices]
         kmeans(annotation_dims, centroids, eps, anchor_file)
         print('centroids.shape', centroids.shape)
