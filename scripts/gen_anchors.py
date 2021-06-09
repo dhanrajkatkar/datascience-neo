@@ -57,7 +57,7 @@ def write_anchors_to_file(centroids, X, anchor_file):
     f.write('%0.2f,%0.2f\n' % (anchors[sorted_indices[-1:], 0], anchors[sorted_indices[-1:], 1]))
 
     f.write('%f\n' % (avg_IOU(X, centroids)))
-    print()
+    f.close()
 
 
 def kmeans(X, centroids, eps, anchor_file):

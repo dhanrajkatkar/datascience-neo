@@ -3,7 +3,7 @@ import shutil
 from os import path, scandir, remove, cpu_count, stat, walk, makedirs, getcwd, rmdir
 from queue import Queue
 from threading import Thread
-from tkinter import Tk, Button, Frame, StringVar, Message
+from tkinter import Tk, Button, Frame
 import cv2
 import logging
 from datetime import datetime
@@ -245,6 +245,9 @@ class ExportAnnotations:
         self.project_name = config.PROJECT_NAME
         self.training_path = path.join("training", self.project_name)
         self.class_file_path = config.CLASS_FILE_PATH
+        if not path.exists(self.class_file_path):
+            with open(self.class_file_path, 'w'):
+                pass
         self.dataset_export_path = config.DATASET_EXPORT_PATH
         self.cfg_file_yolo = path.join(self.training_path, self.project_name + ".cfg")
         self.data_file_yolo = path.join(self.training_path, self.project_name + ".data")
@@ -269,7 +272,7 @@ class ExportAnnotations:
 
         # remove previous dataset
         if path.exists(self.dataset_export_path):
-            rmdir(self.dataset_export_path)
+            shutil.rmtree(self.dataset_export_path, ignore_errors=True)
         makedirs(self.dataset_export_path)
 
         if not path.exists(path.join("training", self.project_name)):
@@ -309,7 +312,7 @@ class ExportAnnotations:
         # self.status_msg.set(msg)
 
     def save_paths(self, q):
-        pbar = tqdm(total=q.qsize(), position=0, leave=True)
+        # pbar = tqdm(total=q.qsize(), position=0, leave=True)
         while not q.empty():
             data = q.get()
             # data : (video_path, txt_path)
@@ -326,7 +329,7 @@ class ExportAnnotations:
             else:
                 msg = "Please select valid paths !"
                 self.display_message(msg)
-            pbar.update(1)
+            # pbar.update(1)
 
     # creating train and test dataset from obtained normalized dataset
     def create_train_test_data(self):
@@ -396,7 +399,7 @@ class ExportAnnotations:
 
         # initiate training
         if platform == "win32":
-            command_win = [self.yolo_path + "\\darknet.exe", "detector", "train", self.data_file_yolo,
+            command_win = [self.yolo_path + "/darknet", "detector", "train", self.data_file_yolo,
                            self.cfg_file_yolo,
                            self.yolo_path + "\\darknet53.conv.74"]
             subprocess.call(command_win)
@@ -410,6 +413,7 @@ class ExportAnnotations:
             self.queue_objects[counter % self.NO_OF_THREADS].put(element)
             counter += 1
         for obj in self.queue_objects:
+            print(obj.qsize())
             Thread(target=self.save_paths, args=(obj,)).start()
 
 

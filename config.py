@@ -2,9 +2,9 @@
 PROJECT_NAME = 'Custom_Object1'
 
 # change to your dataset folder
-DATASET_PATH = '/home/webwerks/Desktop/dataset/'
+DATASET_PATH = '/home/webwerks/Desktop/go2market/dataset/test'
 CLASS_FILE_PATH = r'class.txt'
-DATASET_EXPORT_PATH = r'/home/webwerks/Desktop/dataset_export/'
+DATASET_EXPORT_PATH = r'/home/webwerks/Desktop/go2market/dataset/export'
 LOG_FILE = r'/home/webwerks/Desktop/test.log'
 
 # change to your yolo path
